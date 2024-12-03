@@ -138,7 +138,7 @@ struct sfs_super_d
     uint32_t           magic_num;
     uint32_t           sz_usage;
     
-    uint32_t           max_ino;
+    uint32_t           max_ino; 
     uint32_t           map_inode_blks;
     uint32_t           map_inode_offset;
     uint32_t           data_offset;
