@@ -27,17 +27,17 @@ static struct fuse_operations operations = {
 	.getattr = newfs_getattr,				 /* 获取文件属性，类似stat，必须完成 */
 	.readdir = newfs_readdir,				 /* 填充dentrys */
 	.mknod = newfs_mknod,					 /* 创建文件，touch相关 */
-	.write = NULL,								  	 /* 写入文件 */
-	.read = NULL,								  	 /* 读文件 */
+	.write = newfs_write,								  	 /* 写入文件 */
+	.read = newfs_read,								  	 /* 读文件 */
 	.utimens = newfs_utimens,				 /* 修改时间，忽略，避免touch报错 */
-	.truncate = NULL,						  		 /* 改变文件大小 */
-	.unlink = NULL,							  		 /* 删除文件 */
-	.rmdir	= NULL,							  		 /* 删除目录， rm -r */
-	.rename = NULL,							  		 /* 重命名，mv */
+	.truncate = newfs_truncate,						  		 /* 改变文件大小 */
+	.unlink = newfs_unlink,							  		 /* 删除文件 */
+	.rmdir	= newfs_rmdir,							  		 /* 删除目录， rm -r */
+	.rename = newfs_rename,							  		 /* 重命名，mv */
 
-	.open = NULL,							
-	.opendir = NULL,
-	.access = NULL
+	.open = newfs_open,							
+	.opendir = newfs_opendir,
+	.access = newfs_access
 };
 /******************************************************************************
 * SECTION: 必做函数实现
@@ -86,7 +86,7 @@ void newfs_destroy(void* p) {
  */
 int newfs_mkdir(const char* path, mode_t mode) {
 	/* TODO: 解析路径，创建目录 */
-	(void *)mode;//忽略
+	//(void *)mode;//忽略
 	int is_find, is_root;// ? is_root
 	char* filename;
 
@@ -314,9 +314,8 @@ int newfs_read(const char* path, char* buf, size_t size, off_t offset,
 	}
 
 	if(inode->size < offset + size){
-		return -ENOSPC;
+		size = inode->size - offset;
 	}
-
 	memcpy(buf, inode->data + offset, size);
 	return size;			   
 }
@@ -450,10 +449,15 @@ int newfs_truncate(const char* path, off_t offset) {
 	if(dentry->ftype == NEWFS_DIR) {
 		return -EISDIR;
 	}
+	inode = dentry->inode;
+	
 
+	uint8_t * temp;
+	temp = (uint8_t *)malloc(offset);
+	memcpy(temp, inode->data, inode->size);
+	free(inode->data);
+	inode->data = temp;
 	inode->size = offset;
-
-	inode->data = (uint8_t *)realloc(inode->data, offset);
 	return 0;
 }
 
